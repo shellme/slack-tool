@@ -13,20 +13,12 @@ Slackの様々な操作を行うCLIツールです。AIへの入力に適した�
 
 ## インストール
 
-### Homebrew（推奨）
-
 ```bash
 # tapを追加
 brew tap shellme/slack-tool
 
 # インストール
 brew install slack-tool
-```
-
-### Go install
-
-```bash
-go install github.com/shellme/slack-tool@latest
 ```
 
 ## 初回セットアップ
