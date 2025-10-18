@@ -21,6 +21,19 @@ brew tap shellme/slack-tool
 brew install slack-tool
 ```
 
+## アップデート
+
+```bash
+# Homebrewを更新
+brew update
+
+# slack-toolをアップデート
+brew upgrade slack-tool
+
+# または全パッケージをアップデート
+brew upgrade
+```
+
 ## 初回セットアップ
 
 ### 1. インストール確認
