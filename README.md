@@ -232,6 +232,8 @@ make test
 2. GitHub Actionsが自動的にリリースをビルド・公開
 3. Homebrew Formulaが自動更新
 
+詳細なリリース手順については、[リリースワークフロー](docs/RELEASE_WORKFLOW.md)を参照してください。
+
 ## ライセンス
 
 MIT License

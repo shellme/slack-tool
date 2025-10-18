@@ -111,6 +111,16 @@ brew install slack-tool
    - homebrew-slack-toolリポジトリが存在するか確認
    - tapが正しく追加されているか確認
 
+6. **実行ファイルの権限エラー**
+   - エラー例: `permission denied: slack-tool`
+   - 原因: Formulaのビルドコマンドで実行権限が正しく設定されていない
+   - 対処法: Formulaファイルのビルドコマンドを確認・修正
+
+7. **実行ファイルが破損している**
+   - エラー例: `syntax error near unexpected token 'newline'`
+   - 原因: ディレクトリ構造の問題で正しい実行ファイルが生成されていない
+   - 対処法: ローカルでビルドテストを実行して構造を確認
+
 ## 期待される動作
 
 ### 正常な場合

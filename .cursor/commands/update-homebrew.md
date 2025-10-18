@@ -113,6 +113,17 @@ git push origin main
    - GitHub CLIで認証されているか確認
    - リポジトリへの書き込み権限があるか確認
 
+6. **sedコマンドの互換性エラー（macOS）**
+   - macOSとLinuxでsedコマンドの動作が異なる場合があります
+   - エラー例: `sed: unescaped newline inside substitute pattern`
+   - 対処法: 手動でSHA256を計算してFormulaファイルを編集
+   ```bash
+   # 手動でSHA256を計算
+   curl -L https://github.com/shellme/slack-tool/archive/v0.1.4.tar.gz | shasum -a 256
+   # Formulaファイルを手動編集
+   vim Formula/slack-tool.rb
+   ```
+
 ## ヘルパーコマンド
 
 - `/release` - 新バージョンのリリース

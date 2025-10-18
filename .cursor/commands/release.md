@@ -121,6 +121,7 @@ gh release view v0.1.2
    ```bash
    gh release create v0.1.2 --title "v0.1.2" --notes "リリースノート"
    ```
+   - 注意: 手動リリース後もGitHub Actionsのビルドは継続されます
 
 ## ヘルパーコマンド
 
