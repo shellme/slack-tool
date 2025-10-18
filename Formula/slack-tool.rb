@@ -1,8 +1,8 @@
 class SlackTool < Formula
   desc "Slackの様々な操作を行うCLIツール"
   homepage "https://github.com/shellme/slack-tool"
-  url "https://github.com/shellme/slack-tool/archive/v0.1.2.tar.gz"
-  sha256 "b261505eab26c6955ca5be17b13bb712749ad0cc5ce350ca8d89f2c9f3309e1c"
+  url "https://github.com/shellme/slack-tool/archive/v0.1.3.tar.gz"
+  sha256 "b88cbefd01dedd3f2d884cddfd6b4cffe00e287f862f02bd7d6010e99b301330"
   license "MIT"
 
   depends_on "go" => :build
