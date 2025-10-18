@@ -33,6 +33,21 @@ Homebrew Formulaを更新します。
 - Formulaファイルの更新
 - homebrew-slack-toolリポジトリへの反映
 
+### `/verify-build`
+ローカルビルドを検証します。
+
+**例:**
+```
+/verify-build
+```
+
+**機能:**
+- Go環境の確認
+- 依存関係の整理
+- コードの構文チェック
+- ビルドテスト
+- 実行テスト
+
 ### `/test-homebrew`
 Homebrewでのインストールをテストします。
 
@@ -53,11 +68,13 @@ Homebrewでのインストールをテストします。
 ├── commands/           # コマンドドキュメント
 │   ├── release.md
 │   ├── update-homebrew.md
-│   └── test-homebrew.md
+│   ├── test-homebrew.md
+│   └── verify-build.md
 └── scripts/           # 実行スクリプト
     ├── release.sh
     ├── update-homebrew.sh
     ├── test-homebrew.sh
+    ├── verify-build.sh
     └── helpers/
         ├── calculate-sha256.sh
         └── check-release.sh
@@ -77,6 +94,9 @@ Homebrewでのインストールをテストします。
 
 # Homebrew更新
 ./.cursor/scripts/update-homebrew.sh v0.1.2
+
+# ビルド検証
+./.cursor/scripts/verify-build.sh
 
 # インストールテスト
 ./.cursor/scripts/test-homebrew.sh
