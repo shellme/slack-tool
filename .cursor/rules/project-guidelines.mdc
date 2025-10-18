@@ -7,7 +7,7 @@ alwaysApply: false
 # プロジェクトガイドライン
 
 ## プロジェクト概要
-slack-toolはSlack操作のCLIツールです。
+slack-toolはSlackの様々な操作を行うCLIツールです。
 定型業務を自動化したり、AIと組み合わせた活用を想定しています。
 
 ## コーディング規約
