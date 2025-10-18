@@ -29,10 +29,6 @@ brew install slack-tool
 go install github.com/shellme/slack-tool@latest
 ```
 
-### バイナリダウンロード
-
-[Releases](https://github.com/shellme/slack-tool/releases) ページからお使いのプラットフォーム用のバイナリをダウンロードしてください。
-
 ## 初回セットアップ
 
 ### 1. インストール確認
@@ -237,3 +233,4 @@ make test
 ## ライセンス
 
 MIT License
+
