@@ -55,7 +55,12 @@ Homebrewでのslack-toolインストールをテストするコマンドです�
    - 最新バージョンのslack-toolをインストール
    - インストール成功を確認
 
-5. **動作テスト**
+5. **アップデートテスト**
+   - 新しいバージョンが利用可能かチェック
+   - `brew upgrade slack-tool`でアップデートテスト
+   - アップデート成功を確認
+
+6. **動作テスト**
    - バージョン確認
    - ヘルプ表示の確認
    - 基本コマンドの動作確認
@@ -102,6 +107,7 @@ brew install slack-tool
 3. **バージョンが一致しない**
    - キャッシュをクリア: `brew cleanup`
    - 再インストール: `brew uninstall slack-tool && brew install slack-tool`
+   - アップデート: `brew upgrade slack-tool`
 
 4. **権限エラー**
    - 管理者権限で実行
@@ -126,8 +132,9 @@ brew install slack-tool
 ### 正常な場合
 
 ```
-[SUCCESS] slack-tool v0.1.2 のインストールが完了しました
-[SUCCESS] バージョン確認: slack-tool version v0.1.2
+[SUCCESS] slack-tool v0.1.6 のインストールが完了しました
+[SUCCESS] アップデートテスト: v0.1.5 -> v0.1.6 に正常にアップデート
+[SUCCESS] バージョン確認: slack-tool version 1.0.0
 [SUCCESS] ヘルプ表示: 正常
 [SUCCESS] すべてのテストが成功しました！
 ```
@@ -166,5 +173,14 @@ slack-tool config show
 
 - リリース後の動作確認
 - Formula更新後のテスト
+- アップデート機能のテスト
 - 新しい環境でのセットアップ確認
 - CI/CDパイプラインでのテスト
+
+## アップデートテスト
+
+このコマンドは以下のアップデート方法をテストします：
+
+- `brew install slack-tool` - 新規インストール
+- `brew upgrade slack-tool` - 既存インストールのアップデート
+- `brew upgrade` - 全パッケージのアップデート
