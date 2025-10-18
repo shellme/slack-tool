@@ -8,7 +8,7 @@ class SlackTool < Formula
   depends_on "go" => :build
 
   def install
-    system "go", "build", "-ldflags", "-s -w", "-o", bin/"slack-tool", "./cmd/slack-tool"
+    system "go", "build", "-ldflags", "-s -w", "-o", "#{bin}/slack-tool", "./cmd/slack-tool"
   end
 
   test do
