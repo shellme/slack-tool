@@ -60,6 +60,7 @@ slack-toolの新バージョンをリリースするコマンドです。指定�
 5. **リリース監視**
    - GitHub Actionsの実行状態を監視
    - リリース成功の確認
+   - GitHub Actionsが失敗した場合は手動でリリース作成
 
 ## 注意事項
 
@@ -87,6 +88,12 @@ git push origin :refs/tags/v0.1.2
 # GitHub Actions のログを確認
 gh run list --repo shellme/slack-tool
 gh run view <run-id> --log
+
+# 手動でリリースを作成（GitHub Actionsが失敗した場合）
+gh release create v0.1.2 --title "v0.1.2" --notes "リリースノート"
+
+# リリースの確認
+gh release view v0.1.2
 ```
 
 ### よくあるエラー
@@ -107,6 +114,13 @@ gh run view <run-id> --log
 5. **GitHub Actionsが失敗**
    - ログを確認してエラー原因を特定してください
    - 必要に応じてコードを修正して再実行してください
+
+6. **GitHub Actionsでリリース作成が失敗（403エラー）**
+   - 権限不足でリリース作成に失敗する場合があります
+   - 手動でリリースを作成してください：
+   ```bash
+   gh release create v0.1.2 --title "v0.1.2" --notes "リリースノート"
+   ```
 
 ## ヘルパーコマンド
 
