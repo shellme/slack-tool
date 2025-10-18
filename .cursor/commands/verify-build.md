@@ -24,17 +24,17 @@ slack-toolのローカルビルドを検証するコマンドです。リリー�
 
 このコマンドが実行された場合、以下のスクリプトを実行してください：
 ```bash
-./scripts/verify-build.sh
+./.cursor/scripts/verify-build.sh
 ```
 
 ## 手動実行（人間向け）
 
 ```bash
 # 直接スクリプトを実行
-./scripts/verify-build.sh
+./.cursor/scripts/verify-build.sh
 
 # ヘルプを表示
-./scripts/verify-build.sh --help
+./.cursor/scripts/verify-build.sh --help
 ```
 
 ## 実行内容
