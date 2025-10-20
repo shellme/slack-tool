@@ -59,6 +59,7 @@ var getReactionsCmd = &cobra.Command{
 		filter, _ := cmd.Flags().GetString("filter")
 		email, _ := cmd.Flags().GetBool("email")
 		outputFile, _ := cmd.Flags().GetString("output")
+		simple, _ := cmd.Flags().GetBool("simple")
 
 		// リアクション一覧を取得
 		reactions, err := client.GetReactions(messageURL)
@@ -66,6 +67,9 @@ var getReactionsCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "エラー: リアクションの取得に失敗しました: %v\n", err)
 			os.Exit(1)
 		}
+
+		// スキントーンなどの修飾子を除去してリアクションを統合
+		reactions = mergeReactions(reactions)
 
 		// フィルタが指定されている場合は適用
 		if filter != "" {
@@ -86,14 +90,30 @@ var getReactionsCmd = &cobra.Command{
 			output = os.Stdout
 		}
 
-		// ユーザー一覧を出力
+		// リアクション別にユーザー一覧を出力
 		for _, reaction := range reactions {
-			for _, user := range reaction.Users {
-				if email {
-					fmt.Fprintln(output, user.Email)
-				} else {
-					fmt.Fprintln(output, user.Name)
+			if simple {
+				// シンプル形式：リアクション名のみ、改行区切りでユーザー一覧
+				fmt.Fprintf(output, ":%s:\n", reaction.Name)
+				for _, user := range reaction.Users {
+					if email {
+						fmt.Fprintln(output, user.Email)
+					} else {
+						fmt.Fprintln(output, user.Name)
+					}
 				}
+				fmt.Fprintln(output) // 空行を追加
+			} else {
+				// 通常形式：リアクション名と人数、インデント付き
+				fmt.Fprintf(output, ":%s: (%d人)\n", reaction.Name, len(reaction.Users))
+				for _, user := range reaction.Users {
+					if email {
+						fmt.Fprintf(output, "  - %s\n", user.Email)
+					} else {
+						fmt.Fprintf(output, "  - %s\n", user.Name)
+					}
+				}
+				fmt.Fprintln(output) // 空行を追加
 			}
 		}
 
@@ -112,10 +132,69 @@ func init() {
 	reactionsCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
 	reactionsCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
 	reactionsCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
+	reactionsCmd.Flags().BoolP("simple", "s", false, "シンプル形式で出力（改行のみで区切り、Googleカレンダーなどにコピーしやすい）")
 
 	getReactionsCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
 	getReactionsCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
 	getReactionsCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
+	getReactionsCmd.Flags().BoolP("simple", "s", false, "シンプル形式で出力（改行のみで区切り、Googleカレンダーなどにコピーしやすい）")
+}
+
+// mergeReactions merges reactions with skin tone modifiers into base reactions
+func mergeReactions(reactions []slack.ReactionInfo) []slack.ReactionInfo {
+	// 基本リアクション名をキーとして、ユーザーを統合
+	reactionMap := make(map[string][]slack.UserInfo)
+
+	for _, reaction := range reactions {
+		baseName := normalizeReactionName(reaction.Name)
+
+		// 既存のユーザーリストに追加
+		if existingUsers, exists := reactionMap[baseName]; exists {
+			reactionMap[baseName] = append(existingUsers, reaction.Users...)
+		} else {
+			reactionMap[baseName] = reaction.Users
+		}
+	}
+
+	// マップからスライスに変換
+	var merged []slack.ReactionInfo
+	for baseName, users := range reactionMap {
+		merged = append(merged, slack.ReactionInfo{
+			Name:  baseName,
+			Users: users,
+		})
+	}
+
+	return merged
+}
+
+// normalizeReactionName removes skin tone and other modifiers from reaction names
+func normalizeReactionName(name string) string {
+	// スキントーンの修飾子を除去
+	// 例: "+1::skin-tone-2:" -> "+1"
+	// 例: "thumbsup::skin-tone-3:" -> "thumbsup"
+
+	// ::skin-tone-X: パターンを除去
+	if strings.Contains(name, "::skin-tone-") {
+		parts := strings.Split(name, "::skin-tone-")
+		if len(parts) > 0 {
+			return parts[0]
+		}
+	}
+
+	// その他の修飾子パターンも除去（必要に応じて追加）
+	// 例: "::male:", "::female:", "::person:" など
+	modifiers := []string{"::male:", "::female:", "::person:", "::man:", "::woman:"}
+	for _, modifier := range modifiers {
+		if strings.Contains(name, modifier) {
+			parts := strings.Split(name, modifier)
+			if len(parts) > 0 {
+				return parts[0]
+			}
+		}
+	}
+
+	return name
 }
 
 // filterReactions filters reactions by the specified emoji
