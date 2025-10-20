@@ -132,13 +132,13 @@ func (f *Formatter) formatChannelWithThreads(messages []slack.Message, jst *time
 			if replies, exists := threadReplies[msg.Timestamp]; exists {
 				// スレッド返信を時系列でソート
 				sortedReplies := f.sortMessagesByTimestamp(replies)
-				
+
 				for _, reply := range sortedReplies {
 					replyFormatted, err := f.formatMessage(reply, jst)
 					if err != nil {
 						return "", fmt.Errorf("スレッド返信のフォーマットに失敗しました: %v", err)
 					}
-					
+
 					// スレッド返信としてインデントして表示
 					lines := strings.Split(replyFormatted, "\n")
 					for i, line := range lines {
