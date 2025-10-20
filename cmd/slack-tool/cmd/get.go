@@ -10,15 +10,15 @@ import (
 )
 
 var getCmd = &cobra.Command{
-    Use:   "get-thread <slack-thread-url>",
-    Short: "スレッドの内容を取得・整形",
+	Use:   "get thread <slack-thread-url>",
+	Short: "スレッドの内容を取得・整形",
 	Long: `指定されたSlackスレッドのURLから会話内容を取得し、
 AIへの入力に適した人間が読みやすいプレーンテキスト形式で整形して表示します。
 
 例:
-  slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456"
-  slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.md
-  slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.md --format markdown`,
+  slack-tool get thread "https://your-workspace.slack.com/archives/C12345678/p1234567890123456"
+  slack-tool get thread "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.md
+  slack-tool get thread "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.md --format markdown`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		url := args[0]

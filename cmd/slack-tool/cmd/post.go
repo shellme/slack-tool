@@ -11,15 +11,15 @@ import (
 )
 
 var postCmd = &cobra.Command{
-	Use:   "post <message>",
+	Use:   "post message <message>",
 	Short: "メッセージを投稿",
 	Long: `指定されたSlackチャンネルにメッセージを投稿します。
 
 例:
-  slack-tool post "Hello, world!" --channel C12345678
-  slack-tool post "This is a test message" --channel C12345678 --thread 1234567890.123456
-  slack-tool post "Hey @john, can you review this?" --channel C12345678
-  slack-tool post "スレッド返信です" --thread-url "https://workspace.slack.com/archives/C12345678/p1234567890123456"`,
+  slack-tool post message "Hello, world!" --channel C12345678
+  slack-tool post message "This is a test message" --channel C12345678 --thread 1234567890.123456
+  slack-tool post message "Hey @john, can you review this?" --channel C12345678
+  slack-tool post message "スレッド返信です" --thread-url "https://workspace.slack.com/archives/C12345678/p1234567890123456"`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		message := args[0]

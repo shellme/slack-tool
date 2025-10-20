@@ -11,16 +11,16 @@ import (
 )
 
 var reactionsCmd = &cobra.Command{
-	Use:   "get-reactions <message-url>",
+	Use:   "get reactions <message-url>",
 	Short: "指定した投稿のリアクション一覧を取得",
 	Long: `指定したSlack投稿のリアクション一覧を取得します。
 
 例:
-  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456"
-  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter ":参加します:"
-  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --email
-  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --output reactions.txt
-  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter "承知_しました" --email --output participants.txt`,
+  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456"
+  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter ":参加します:"
+  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --email
+  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --output reactions.txt
+  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter "承知_しました" --email --output participants.txt`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		messageURL := args[0]

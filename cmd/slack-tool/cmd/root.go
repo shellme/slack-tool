@@ -21,6 +21,7 @@ Slackへの投稿やその他の操作をサポートします。
 
 使用例:
   slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456"
+  slack-tool post "Hello, world!" --channel C12345678
   slack-tool config set token "xoxp-xxxxxxxxxxxxxx-xxxxxxxx"
   slack-tool config show`,
 	Version: "1.0.0",
