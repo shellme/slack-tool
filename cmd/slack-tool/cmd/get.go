@@ -10,14 +10,24 @@ import (
 )
 
 var getCmd = &cobra.Command{
-	Use:   "get",
+	Use:   "get [thread-url]",
 	Short: "データ取得コマンド",
 	Long:  "Slackからデータを取得するためのコマンドです。",
+	Args:  cobra.MinimumNArgs(0),
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			// 引数がある場合は直接スレッド取得処理を実行
+			getThreadCmd.Run(cmd, args)
+		} else {
+			// 引数がない場合はヘルプを表示
+			cmd.Help()
+		}
+	},
 }
 
 var getThreadCmd = &cobra.Command{
-    Use:   "thread <slack-thread-url>",
-    Short: "スレッドの内容を取得・整形",
+	Use:   "thread <slack-thread-url>",
+	Short: "スレッドの内容を取得・整形",
 	Long: `指定されたSlackスレッドのURLから会話内容を取得し、
 AIへの入力に適した人間が読みやすいプレーンテキスト形式で整形して表示します。
 
@@ -100,6 +110,10 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 func init() {
 	rootCmd.AddCommand(getCmd)
 	getCmd.AddCommand(getThreadCmd)
+
+	// get コマンドのフラグ（省略形用）
+	getCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: thread.md, thread.txt）。拡張子で形式を自動判定")
+	getCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
 
 	// フラグの定義
 	getThreadCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: thread.md, thread.txt）。拡張子で形式を自動判定")

@@ -11,9 +11,19 @@ import (
 )
 
 var postCmd = &cobra.Command{
-	Use:   "post",
+	Use:   "post [message]",
 	Short: "メッセージ投稿コマンド",
 	Long:  "Slackにメッセージを投稿するためのコマンドです。",
+	Args:  cobra.MinimumNArgs(0),
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			// 引数がある場合は直接投稿処理を実行
+			postMessageCmd.Run(cmd, args)
+		} else {
+			// 引数がない場合はヘルプを表示
+			cmd.Help()
+		}
+	},
 }
 
 var postMessageCmd = &cobra.Command{
@@ -104,6 +114,11 @@ var postMessageCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(postCmd)
 	postCmd.AddCommand(postMessageCmd)
+
+	// post コマンドのフラグ（省略形用）
+	postCmd.Flags().StringP("channel", "c", "", "投稿先のチャンネルIDまたはURL")
+	postCmd.Flags().StringP("thread", "t", "", "スレッド返信する場合のタイムスタンプ")
+	postCmd.Flags().StringP("thread-url", "u", "", "スレッド返信する場合のスレッドURL")
 
 	postMessageCmd.Flags().StringP("channel", "c", "", "投稿先のチャンネルIDまたはURL")
 	postMessageCmd.Flags().StringP("thread", "t", "", "スレッド返信する場合のタイムスタンプ")

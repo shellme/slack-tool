@@ -10,6 +10,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var reactionsCmd = &cobra.Command{
+	Use:   "reactions [message-url]",
+	Short: "指定した投稿のリアクション一覧を取得",
+	Long:  "Slack投稿のリアクション一覧を取得するためのコマンドです。",
+	Args:  cobra.MinimumNArgs(0),
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			// 引数がある場合は直接リアクション取得処理を実行
+			getReactionsCmd.Run(cmd, args)
+		} else {
+			// 引数がない場合はヘルプを表示
+			cmd.Help()
+		}
+	},
+}
+
 var getReactionsCmd = &cobra.Command{
 	Use:   "reactions <message-url>",
 	Short: "指定した投稿のリアクション一覧を取得",
@@ -89,7 +105,13 @@ var getReactionsCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.AddCommand(reactionsCmd)
 	getCmd.AddCommand(getReactionsCmd)
+
+	// reactions コマンドのフラグ（省略形用）
+	reactionsCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
+	reactionsCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
+	reactionsCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
 
 	getReactionsCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
 	getReactionsCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
