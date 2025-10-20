@@ -11,8 +11,8 @@ import (
 )
 
 var postCmd = &cobra.Command{
-    Use:   "message-post <message>",
-    Short: "メッセージを投稿",
+	Use:   "post <message>",
+	Short: "メッセージを投稿",
 	Long: `指定されたSlackチャンネルにメッセージを投稿します。
 
 例:
