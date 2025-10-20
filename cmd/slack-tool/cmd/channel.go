@@ -10,8 +10,8 @@ import (
 )
 
 var getChannelCmd = &cobra.Command{
-    Use:   "channel <slack-channel-url>",
-    Short: "チャンネルの内容を取得・整形",
+	Use:   "channel <slack-channel-url>",
+	Short: "チャンネルの内容を取得・整形",
 	Long: `指定されたSlackチャンネルのURLから会話内容を取得し、
 AIへの入力に適した人間が読みやすいプレーンテキスト形式で整形して表示します。
 
@@ -56,14 +56,32 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 			os.Exit(1)
 		}
 
-		// 取得件数を取得
+		// フラグを取得
 		limit, _ := cmd.Flags().GetInt("limit")
+		oldest, _ := cmd.Flags().GetString("oldest")
+		latest, _ := cmd.Flags().GetString("latest")
+
+		// 1000件を超える場合の警告表示
+		if limit > 1000 {
+			fmt.Fprintf(os.Stderr, "警告: 指定された取得件数（%d件）はSlack APIの制限（1,000件）を超えています。\n", limit)
+			fmt.Fprintf(os.Stderr, "実際には1,000件までしか取得されません。\n")
+			fmt.Fprintf(os.Stderr, "大量のデータを取得する場合は期間指定（--oldest/--latest）を使用して複数回に分けて取得することをお勧めします。\n\n")
+		}
 
 		// チャンネルの内容を取得（スレッド返信も含む）
-		messages, err := client.GetChannelHistoryWithThreads(channelInfo.ChannelID, limit)
+		messages, err := client.GetChannelHistoryWithThreadsInRange(channelInfo.ChannelID, limit, oldest, latest)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "エラー: チャンネルの取得に失敗しました: %v\n", err)
 			os.Exit(1)
+		}
+
+		// 取得件数の情報表示
+		actualCount := len(messages)
+		fmt.Fprintf(os.Stderr, "情報: %d件のメッセージを取得しました。\n", actualCount)
+
+		if actualCount >= 1000 {
+			fmt.Fprintf(os.Stderr, "情報: 1,000件の制限に達しました。古いメッセージが取得されていない可能性があります。\n")
+			fmt.Fprintf(os.Stderr, "全期間のデータが必要な場合は期間指定（--oldest/--latest）を使用して複数回に分けて取得してください。\n\n")
 		}
 
 		// チャンネル情報を取得
@@ -112,4 +130,6 @@ func init() {
 	getChannelCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: channel.md, channel.txt）。拡張子で形式を自動判定")
 	getChannelCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
 	getChannelCmd.Flags().IntP("limit", "l", 100, "取得するメッセージ数を指定（デフォルト: 100）")
+	getChannelCmd.Flags().StringP("oldest", "", "", "取得開始日時を指定（例: 2024-01-01, 2024-01-01T00:00:00, 1704067200）")
+	getChannelCmd.Flags().StringP("latest", "", "", "取得終了日時を指定（例: 2024-12-31, 2024-12-31T23:59:59, 1735689599）")
 }

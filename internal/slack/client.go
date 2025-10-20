@@ -2,7 +2,9 @@ package slack
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/slack-go/slack"
 )
@@ -72,9 +74,30 @@ func (c *Client) GetChannelHistory(channelID string, limit int) ([]slack.Message
 
 // GetChannelHistoryWithThreads fetches channel history including thread replies
 func (c *Client) GetChannelHistoryWithThreads(channelID string, limit int) ([]slack.Message, error) {
+	return c.GetChannelHistoryWithThreadsInRange(channelID, limit, "", "")
+}
+
+// GetChannelHistoryWithThreadsInRange fetches channel history including thread replies with date range
+func (c *Client) GetChannelHistoryWithThreadsInRange(channelID string, limit int, oldest, latest string) ([]slack.Message, error) {
 	params := &slack.GetConversationHistoryParameters{
 		ChannelID: channelID,
 		Limit:     limit,
+	}
+
+	// 期間指定がある場合は設定
+	if oldest != "" {
+		oldestTS, err := c.parseTimestamp(oldest)
+		if err != nil {
+			return nil, fmt.Errorf("oldest の日時解析に失敗しました: %v", err)
+		}
+		params.Oldest = oldestTS
+	}
+	if latest != "" {
+		latestTS, err := c.parseTimestamp(latest)
+		if err != nil {
+			return nil, fmt.Errorf("latest の日時解析に失敗しました: %v", err)
+		}
+		params.Latest = latestTS
 	}
 
 	messages, err := c.api.GetConversationHistory(params)
@@ -207,8 +230,8 @@ func (c *Client) GetMessageInfo(channelID, timestamp string) (*slack.Message, er
 
 // ReactionInfo contains information about a reaction
 type ReactionInfo struct {
-	Name  string      `json:"name"`
-	Users []UserInfo  `json:"users"`
+	Name  string     `json:"name"`
+	Users []UserInfo `json:"users"`
 }
 
 // UserInfo contains basic user information
@@ -237,7 +260,7 @@ func (c *Client) GetReactions(messageURL string) ([]ReactionInfo, error) {
 		Channel:   threadInfo.ChannelID,
 		Timestamp: threadInfo.Timestamp,
 	}
-	
+
 	reactions, err := c.api.GetReactions(itemRef, slack.GetReactionsParameters{})
 	if err != nil {
 		return nil, c.handleAPIError(err)
@@ -323,6 +346,32 @@ func containsSubstring(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// parseTimestamp converts various date formats to Slack timestamp format
+func (c *Client) parseTimestamp(dateStr string) (string, error) {
+	// 既にUnixタイムスタンプ形式（数字のみ）の場合はそのまま返す
+	if timestamp, err := strconv.ParseFloat(dateStr, 64); err == nil {
+		// Slack APIは秒単位のタイムスタンプを期待する
+		return fmt.Sprintf("%.0f", timestamp), nil
+	}
+
+	// 日時文字列を解析するためのフォーマット一覧
+	formats := []string{
+		"2006-01-02T15:04:05Z07:00", // RFC3339
+		"2006-01-02T15:04:05",       // ローカル時刻
+		"2006-01-02 15:04:05",       // スペース区切り
+		"2006-01-02",                // 日付のみ
+	}
+
+	for _, format := range formats {
+		if t, err := time.Parse(format, dateStr); err == nil {
+			// Unixタイムスタンプに変換（秒単位）
+			return fmt.Sprintf("%.0f", float64(t.Unix())), nil
+		}
+	}
+
+	return "", fmt.Errorf("サポートされていない日時形式です: %s", dateStr)
 }
 
 // TestConnection tests the Slack API connection
