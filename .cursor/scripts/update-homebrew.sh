@@ -123,7 +123,7 @@ update_formula() {
         exit 1
     fi
     
-    log_info "Formulaファイルを更新中: $formula_file"
+    echo -e "${BLUE}[INFO]${NC} Formulaファイルを更新中: $formula_file"
     
     # バックアップを作成
     cp "$formula_file" "$formula_file.backup"
