@@ -7,6 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ビルド時に設定される変数
+var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "slack-tool",
 	Short: "Slack操作を行うCLIツール",
@@ -24,7 +31,7 @@ Slackへの投稿やその他の操作をサポートします。
   slack-tool post "Hello, world!" --channel C12345678
   slack-tool config set token "xoxp-xxxxxxxxxxxxxx-xxxxxxxx"
   slack-tool config show`,
-	Version: "1.0.0",
+	Version: version,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -37,5 +44,5 @@ func Execute() {
 
 func init() {
 	// バージョン表示のカスタマイズ
-	rootCmd.SetVersionTemplate("slack-tool version {{.Version}}\n")
+	rootCmd.SetVersionTemplate(fmt.Sprintf("slack-tool version %s\ncommit: %s\nbuilt: %s\n", version, commit, date))
 }
