@@ -74,11 +74,15 @@ slack-tool get "https://your-workspace.slack.com/archives/C12345678/p12345678901
 slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.md
 
 # プレーンテキスト形式で保存
-slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.txt --format text
+slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.txt
 
 # Markdown形式で保存（明示的に指定）
 slack-tool get "https://your-workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.md --format markdown
 ```
+
+補足:
+- **出力形式の自動判定**: `--output` の拡張子で形式を自動判定します（`.md`/`.markdown` → markdown、それ以外 → text）。
+- **明示的指定の優先**: `--format` を指定した場合は拡張子より `--format` が優先されます。
 
 ### チャンネルの取得
 
@@ -95,11 +99,15 @@ slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --limit
 slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --output channel.md
 
 # プレーンテキスト形式で保存
-slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --output channel.txt --format text
+slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --output channel.txt
 
 # プライベートチャンネルやダイレクトメッセージも取得可能
 slack-tool channel "https://your-workspace.slack.com/archives/G12345678" --limit 200
 ```
+
+補足:
+- **出力形式の自動判定**: `--output` の拡張子で形式を自動判定します（`.md`/`.markdown` → markdown、それ以外 → text）。
+- **明示的指定の優先**: `--format` を指定した場合は拡張子より `--format` が優先されます。
 
 ## 出力例
 
@@ -194,11 +202,13 @@ slack-tool channel "https://your-workspace.slack.com/archives/G12345678" --limit
 - `slack-tool post "<message>" --channel <channel-id>` - チャンネルにメッセージを投稿
 - `slack-tool post "<message>" --channel <channel-url>` - チャンネルURLでメッセージを投稿
 - `slack-tool post "<message>" --thread-url <thread-url>` - スレッドに返信を投稿
+- `slack-tool post "<message>" --channel <channel-id> --thread <timestamp>` - TSを直接指定してスレッド返信
 
 ### リアクション管理コマンド
 - `slack-tool reactions <message-url>` - 指定した投稿のリアクション一覧を取得
 - `slack-tool reactions <message-url> --filter ":emoji:"` - 特定のリアクションのみをフィルタ
 - `slack-tool reactions <message-url> --email` - メールアドレス形式で出力
+- `slack-tool reactions <message-url> --output <file>` - 結果をファイルに保存
 
 ## 開発
 

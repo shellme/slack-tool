@@ -95,6 +95,6 @@ func init() {
 	rootCmd.AddCommand(getCmd)
 
 	// フラグの定義
-	getCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: thread.md）")
-	getCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text または markdown）")
+	getCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: thread.md, thread.txt）。拡張子で形式を自動判定")
+	getCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
 }

@@ -17,9 +17,18 @@ func saveToFile(content, filename, format string) error {
 		filename = fmt.Sprintf("slack_content_%s.md", timestamp)
 	}
 
-	// ファイル拡張子が指定されていない場合は.mdを追加
-	if !strings.Contains(filename, ".") {
-		filename += ".md"
+	// ファイル拡張子の取得（自動判定用）
+	ext := strings.ToLower(filepath.Ext(filename))
+	// ファイル拡張子が指定されていない場合は、formatの指定に応じて補完
+	if ext == "" {
+		if strings.EqualFold(format, "markdown") || strings.EqualFold(format, "md") {
+			filename += ".md"
+			ext = ".md"
+		} else {
+			// デフォルトはプレーンテキスト
+			filename += ".txt"
+			ext = ".txt"
+		}
 	}
 
 	// ディレクトリが存在しない場合は作成
@@ -31,8 +40,19 @@ func saveToFile(content, filename, format string) error {
 	}
 
 	// 形式に応じてコンテンツを変換
+	// 優先度: 明示的なformat指定 > 出力ファイル拡張子 > デフォルト(text)
 	var finalContent string
-	switch strings.ToLower(format) {
+	effectiveFormat := strings.ToLower(strings.TrimSpace(format))
+	if effectiveFormat == "" {
+		switch ext {
+		case ".md", ".markdown":
+			effectiveFormat = "markdown"
+		default:
+			effectiveFormat = "text"
+		}
+	}
+
+	switch effectiveFormat {
 	case "markdown", "md":
 		finalContent = convertToMarkdown(content)
 	default:

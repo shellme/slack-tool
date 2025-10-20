@@ -109,7 +109,7 @@ func init() {
 	rootCmd.AddCommand(channelCmd)
 
 	// フラグの定義
-	channelCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: channel.md）")
-	channelCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text または markdown）")
+	channelCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: channel.md, channel.txt）。拡張子で形式を自動判定")
+	channelCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
 	channelCmd.Flags().IntP("limit", "l", 100, "取得するメッセージ数を指定（デフォルト: 100）")
 }
