@@ -39,6 +39,20 @@ slack-tool config set-token "xoxp-your-token-here"
 slack-tool config show
 ```
 
+### アップグレード
+
+```bash
+# slack-toolを最新版にアップグレード
+brew upgrade slack-tool
+
+# または、tapを更新してからアップグレード
+brew update
+brew upgrade slack-tool
+
+# バージョン確認
+slack-tool --version
+```
+
 ### 基本的な使用方法
 
 > [!TIP]
