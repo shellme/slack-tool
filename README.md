@@ -106,6 +106,18 @@ slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --o
 
 # プライベートチャンネルやダイレクトメッセージも取得可能
 slack-tool get channel "https://your-workspace.slack.com/archives/G12345678" --limit 200
+
+# 2024年1月の投稿を取得
+slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01" --latest "2024-01-31"
+
+# 日時形式での指定
+slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01T00:00:00" --latest "2024-01-31T23:59:59"
+
+# Unixタイムスタンプでの指定
+slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "1704067200" --latest "1735689599"
+
+# 期間指定とファイル出力を組み合わせ
+slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01" --latest "2024-01-31" --output january.md
 ```
 
 ### メッセージの投稿（post message）
@@ -150,6 +162,7 @@ slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890
 補足:
 - **出力形式の自動判定**: `--output` の拡張子で形式を自動判定します（`.md`/`.markdown` → markdown、それ以外 → text）。
 - **明示的指定の優先**: `--format` を指定した場合は拡張子より `--format` が優先されます。
+- **取得件数制限**: 1回のリクエストで最大1,000件まで取得可能です。それ以上の取得が必要な場合は期間指定（`--oldest`/`--latest`）を使用して複数回に分けて取得してください。
 
 ## 出力例
 
@@ -239,6 +252,7 @@ slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890
 - `slack-tool get channel <slack-channel-url>` - Slackチャンネルの内容を取得・整形
 - `slack-tool get channel <slack-channel-url> --output <file>` - チャンネルの内容をファイルに保存
 - `slack-tool get channel <slack-channel-url> --limit <number>` - 取得件数を指定
+- `slack-tool get channel <slack-channel-url> --oldest <date> --latest <date>` - 期間を指定して取得
 
 ### メッセージ投稿コマンド（post）
 - `slack-tool post message "<message>" --channel <channel-id>` - チャンネルにメッセージを投稿
