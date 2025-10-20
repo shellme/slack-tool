@@ -157,12 +157,51 @@ slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890
 
 # 結果をファイルに保存
 slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --output reactions.txt
+
+# シンプル形式で出力（Googleカレンダーなどにコピーしやすい）
+slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --simple
+
+# シンプル形式でメールアドレス出力
+slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --simple --email
+```
+
+#### 出力例
+
+**通常形式（デフォルト）:**
+```
+:+1: (3人)
+  - alice
+  - bob
+  - henry
+
+:suteki-pink: (5人)
+  - charlie
+  - diana
+  - eve
+  - frank
+  - grace
+```
+
+**シンプル形式（`--simple`）:**
+```
+:+1:
+alice
+bob
+henry
+
+:suteki-pink:
+charlie
+diana
+eve
+frank
+grace
 ```
 
 補足:
 - **出力形式の自動判定**: `--output` の拡張子で形式を自動判定します（`.md`/`.markdown` → markdown、それ以外 → text）。
 - **明示的指定の優先**: `--format` を指定した場合は拡張子より `--format` が優先されます。
 - **取得件数制限**: 1回のリクエストで最大1,000件まで取得可能です。それ以上の取得が必要な場合は期間指定（`--oldest`/`--latest`）を使用して複数回に分けて取得してください。
+- **リアクション統合**: スキントーンなどの修飾子（`:skin-tone-2:`など）は基本のリアクション名に統合されます。例：`:+1:` と `:+1::skin-tone-2:` は `:+1:` として集計されます。
 
 ## 出力例
 
@@ -170,11 +209,11 @@ slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890
 ```
 --- Slackスレッドの内容 (2025/01/18 取得) ---
 
-[2025-01-17 10:30:15][@suzuki_san]:
+[2025-01-17 10:30:15][@alice]:
 本番環境でユーザーAさんから「画像がアップロードできない」と報告がありました。
 どなたか状況わかりますか？
 
-[2025-01-17 10:32:01][@sato_san]:
+[2025-01-17 10:32:01][@bob]:
 ログを確認しましたが、S3バケットの権限エラーが出ていますね。
 おそらく昨日のデプロイでIAMロールの設定がもれていそうです。
 
@@ -185,11 +224,11 @@ slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890
 ```markdown
 # Slackスレッドの内容 (2025/01/18 取得)
 
-[2025-01-17 10:30:15][@suzuki_san]:
+[2025-01-17 10:30:15][@alice]:
 本番環境でユーザーAさんから「画像がアップロードできない」と報告がありました。
 どなたか状況わかりますか？
 
-[2025-01-17 10:32:01][@sato_san]:
+[2025-01-17 10:32:01][@bob]:
 ログを確認しましたが、S3バケットの権限エラーが出ていますね。
 おそらく昨日のデプロイでIAMロールの設定がもれていそうです。
 ```
