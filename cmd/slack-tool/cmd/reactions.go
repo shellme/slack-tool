@@ -11,8 +11,8 @@ import (
 )
 
 var reactionsCmd = &cobra.Command{
-	Use:   "reactions <message-url>",
-	Short: "指定したSlack投稿のリアクション一覧を取得",
+    Use:   "reaction-list <message-url>",
+    Short: "指定した投稿のリアクション一覧を取得",
 	Long: `指定したSlack投稿のリアクション一覧を取得します。
 
 例:
