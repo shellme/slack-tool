@@ -11,7 +11,13 @@ import (
 )
 
 var postCmd = &cobra.Command{
-	Use:   "post message <message>",
+	Use:   "post",
+	Short: "メッセージ投稿コマンド",
+	Long:  "Slackにメッセージを投稿するためのコマンドです。",
+}
+
+var postMessageCmd = &cobra.Command{
+	Use:   "message <message>",
 	Short: "メッセージを投稿",
 	Long: `指定されたSlackチャンネルにメッセージを投稿します。
 
@@ -97,8 +103,9 @@ var postCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(postCmd)
+	postCmd.AddCommand(postMessageCmd)
 
-	postCmd.Flags().StringP("channel", "c", "", "投稿先のチャンネルIDまたはURL")
-	postCmd.Flags().StringP("thread", "t", "", "スレッド返信する場合のタイムスタンプ")
-	postCmd.Flags().StringP("thread-url", "u", "", "スレッド返信する場合のスレッドURL")
+	postMessageCmd.Flags().StringP("channel", "c", "", "投稿先のチャンネルIDまたはURL")
+	postMessageCmd.Flags().StringP("thread", "t", "", "スレッド返信する場合のタイムスタンプ")
+	postMessageCmd.Flags().StringP("thread-url", "u", "", "スレッド返信する場合のスレッドURL")
 }

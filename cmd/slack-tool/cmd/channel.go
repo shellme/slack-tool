@@ -9,9 +9,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var channelCmd = &cobra.Command{
-	Use:   "get channel <slack-channel-url>",
-	Short: "チャンネルの内容を取得・整形",
+var getChannelCmd = &cobra.Command{
+    Use:   "channel <slack-channel-url>",
+    Short: "チャンネルの内容を取得・整形",
 	Long: `指定されたSlackチャンネルのURLから会話内容を取得し、
 AIへの入力に適した人間が読みやすいプレーンテキスト形式で整形して表示します。
 
@@ -106,10 +106,10 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 }
 
 func init() {
-	rootCmd.AddCommand(channelCmd)
+	getCmd.AddCommand(getChannelCmd)
 
 	// フラグの定義
-	channelCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: channel.md, channel.txt）。拡張子で形式を自動判定")
-	channelCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
-	channelCmd.Flags().IntP("limit", "l", 100, "取得するメッセージ数を指定（デフォルト: 100）")
+	getChannelCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: channel.md, channel.txt）。拡張子で形式を自動判定")
+	getChannelCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
+	getChannelCmd.Flags().IntP("limit", "l", 100, "取得するメッセージ数を指定（デフォルト: 100）")
 }

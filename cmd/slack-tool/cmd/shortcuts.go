@@ -4,10 +4,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// getShortcutCmd は `get` コマンドの省略形で、`get thread` と同じ動作をします
-var getShortcutCmd = &cobra.Command{
-	Use:   "get <slack-thread-url>",
+// getThreadShortcutCmd は `get` コマンドの省略形で、`get thread` と同じ動作をします
+var getThreadShortcutCmd = &cobra.Command{
+	Use:   "get-thread <slack-thread-url>",
 	Short: "スレッドの内容を取得・整形（get thread の省略形）",
+	Aliases: []string{"get"},
 	Long: `指定されたSlackスレッドのURLから会話内容を取得し、
 AIへの入力に適した人間が読みやすいプレーンテキスト形式で整形して表示します。
 
@@ -20,14 +21,15 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// get thread コマンドと同じ処理を実行
-		getCmd.Run(cmd, args)
+		getThreadCmd.Run(cmd, args)
 	},
 }
 
-// postShortcutCmd は `post` コマンドの省略形で、`post message` と同じ動作をします
-var postShortcutCmd = &cobra.Command{
-	Use:   "post <message>",
+// postMessageShortcutCmd は `post` コマンドの省略形で、`post message` と同じ動作をします
+var postMessageShortcutCmd = &cobra.Command{
+	Use:   "post-message <message>",
 	Short: "メッセージを投稿（post message の省略形）",
+	Aliases: []string{"post"},
 	Long: `指定されたSlackチャンネルにメッセージを投稿します。
 
 これは 'post message' コマンドの省略形です。
@@ -39,15 +41,16 @@ var postShortcutCmd = &cobra.Command{
   slack-tool post "スレッド返信です" --thread-url "https://workspace.slack.com/archives/C12345678/p1234567890123456"`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// post コマンドと同じ処理を実行
-		postCmd.Run(cmd, args)
+		// post message コマンドと同じ処理を実行
+		postMessageCmd.Run(cmd, args)
 	},
 }
 
-// reactionsShortcutCmd は `reactions` コマンドの省略形で、`get reactions` と同じ動作をします
-var reactionsShortcutCmd = &cobra.Command{
-	Use:   "reactions <message-url>",
+// getReactionsShortcutCmd は `reactions` コマンドの省略形で、`get reactions` と同じ動作をします
+var getReactionsShortcutCmd = &cobra.Command{
+	Use:   "get-reactions <message-url>",
 	Short: "指定した投稿のリアクション一覧を取得（get reactions の省略形）",
+	Aliases: []string{"reactions"},
 	Long: `指定したSlack投稿のリアクション一覧を取得します。
 
 これは 'get reactions' コマンドの省略形です。
@@ -61,25 +64,25 @@ var reactionsShortcutCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// get reactions コマンドと同じ処理を実行
-		reactionsCmd.Run(cmd, args)
+		getReactionsCmd.Run(cmd, args)
 	},
 }
 
 func init() {
 	// 省略コマンドをルートコマンドに追加
-	rootCmd.AddCommand(getShortcutCmd)
-	rootCmd.AddCommand(postShortcutCmd)
-	rootCmd.AddCommand(reactionsShortcutCmd)
+	rootCmd.AddCommand(getThreadShortcutCmd)
+	rootCmd.AddCommand(postMessageShortcutCmd)
+	rootCmd.AddCommand(getReactionsShortcutCmd)
 
 	// 各省略コマンドに元のコマンドと同じフラグを追加
-	getShortcutCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: thread.md, thread.txt）。拡張子で形式を自動判定")
-	getShortcutCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
+	getThreadShortcutCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: thread.md, thread.txt）。拡張子で形式を自動判定")
+	getThreadShortcutCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
 
-	postShortcutCmd.Flags().StringP("channel", "c", "", "投稿先のチャンネルIDまたはURL")
-	postShortcutCmd.Flags().StringP("thread", "t", "", "スレッド返信する場合のタイムスタンプ")
-	postShortcutCmd.Flags().StringP("thread-url", "u", "", "スレッド返信する場合のスレッドURL")
+	postMessageShortcutCmd.Flags().StringP("channel", "c", "", "投稿先のチャンネルIDまたはURL")
+	postMessageShortcutCmd.Flags().StringP("thread", "t", "", "スレッド返信する場合のタイムスタンプ")
+	postMessageShortcutCmd.Flags().StringP("thread-url", "u", "", "スレッド返信する場合のスレッドURL")
 
-	reactionsShortcutCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
-	reactionsShortcutCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
-	reactionsShortcutCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
+	getReactionsShortcutCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
+	getReactionsShortcutCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
+	getReactionsShortcutCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
 }

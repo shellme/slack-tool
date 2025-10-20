@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var reactionsCmd = &cobra.Command{
-	Use:   "get reactions <message-url>",
+var getReactionsCmd = &cobra.Command{
+	Use:   "reactions <message-url>",
 	Short: "指定した投稿のリアクション一覧を取得",
 	Long: `指定したSlack投稿のリアクション一覧を取得します。
 
@@ -89,11 +89,11 @@ var reactionsCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(reactionsCmd)
+	getCmd.AddCommand(getReactionsCmd)
 
-	reactionsCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
-	reactionsCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
-	reactionsCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
+	getReactionsCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
+	getReactionsCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
+	getReactionsCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
 }
 
 // filterReactions filters reactions by the specified emoji
