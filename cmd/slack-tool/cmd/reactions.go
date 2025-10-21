@@ -32,11 +32,12 @@ var getReactionsCmd = &cobra.Command{
 	Long: `指定したSlack投稿のリアクション一覧を取得します。
 
 例:
+  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456"
   slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456"
-  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter ":参加します:"
-  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --email
-  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --output reactions.txt
-  slack-tool get reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter "承知_しました" --email --output participants.txt`,
+  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter ":参加します:"
+  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --email
+  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --output reactions.txt
+  slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890123456" --filter "承知_しました" --email --output participants.txt`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		messageURL := args[0]
@@ -134,6 +135,7 @@ func init() {
 	reactionsCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")
 	reactionsCmd.Flags().BoolP("simple", "s", false, "シンプル形式で出力（改行のみで区切り、Googleカレンダーなどにコピーしやすい）")
 
+	// get reactions コマンドのフラグ
 	getReactionsCmd.Flags().StringP("filter", "f", "", "特定のリアクションのみをフィルタ（例: :参加します:）")
 	getReactionsCmd.Flags().BoolP("email", "e", false, "ユーザー名の代わりにメールアドレスを出力")
 	getReactionsCmd.Flags().StringP("output", "o", "", "結果をファイルに保存（例: reactions.txt）")

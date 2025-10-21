@@ -9,6 +9,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var channelCmd = &cobra.Command{
+	Use:   "channel [channel-url]",
+	Short: "チャンネルの内容を取得・整形",
+	Long:  "Slackチャンネルの内容を取得するためのコマンドです。",
+	Args:  cobra.MinimumNArgs(0),
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 0 {
+			// 引数がある場合は直接チャンネル取得処理を実行
+			getChannelCmd.Run(cmd, args)
+		} else {
+			// 引数がない場合はヘルプを表示
+			cmd.Help()
+		}
+	},
+}
+
 var getChannelCmd = &cobra.Command{
 	Use:   "channel <slack-channel-url>",
 	Short: "チャンネルの内容を取得・整形",
@@ -16,10 +32,11 @@ var getChannelCmd = &cobra.Command{
 AIへの入力に適した人間が読みやすいプレーンテキスト形式で整形して表示します。
 
 例:
+  slack-tool channel "https://your-workspace.slack.com/archives/C12345678"
   slack-tool get channel "https://your-workspace.slack.com/archives/C12345678"
-  slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --output channel.md
-  slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --output channel.md --format markdown
-  slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --limit 50`,
+  slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --output channel.md
+  slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --output channel.md --format markdown
+  slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --limit 50`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		url := args[0]
@@ -124,9 +141,17 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 }
 
 func init() {
+	rootCmd.AddCommand(channelCmd)
 	getCmd.AddCommand(getChannelCmd)
 
-	// フラグの定義
+	// channel コマンドのフラグ（省略形用）
+	channelCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: channel.md, channel.txt）。拡張子で形式を自動判定")
+	channelCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
+	channelCmd.Flags().IntP("limit", "l", 100, "取得するメッセージ数を指定（デフォルト: 100）")
+	channelCmd.Flags().StringP("oldest", "", "", "取得開始日時を指定（例: 2024-01-01, 2024-01-01T00:00:00, 1704067200）")
+	channelCmd.Flags().StringP("latest", "", "", "取得終了日時を指定（例: 2024-12-31, 2024-12-31T23:59:59, 1735689599）")
+
+	// get channel コマンドのフラグ
 	getChannelCmd.Flags().StringP("output", "o", "", "出力ファイル名を指定（例: channel.md, channel.txt）。拡張子で形式を自動判定")
 	getChannelCmd.Flags().StringP("format", "f", "text", "出力形式を指定（text / markdown）。指定があれば拡張子より優先")
 	getChannelCmd.Flags().IntP("limit", "l", 100, "取得するメッセージ数を指定（デフォルト: 100）")
