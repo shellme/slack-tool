@@ -12,31 +12,38 @@
 
 ### 設定コマンド
 
-- `slack-tool config set-token <token>` - Slack APIトークンを設定
+- `slack-tool config set token <token>` - Slack APIトークンを設定
 - `slack-tool config show` - 現在の設定を表示
 
 ### データ取得コマンド（get）
 
-#### スレッドの取得（get thread）
+#### メッセージの取得（get message）
 
 > [!TIP]
-> 最もよく使用されるコマンドです。SlackのスレッドURLを指定するだけで、AIに最適化された形式で内容を取得できます。
+> 最も汎用的なコマンドです。単一メッセージ、スレッド全体、スレッドの親メッセージのみなど、様々な取得パターンに対応しています。
 
-指定したSlackスレッドのURLから会話内容を取得し、AIへの入力に適した人間が読みやすいプレーンテキスト形式で整形して表示します。
+指定したSlackメッセージのURLから内容を取得し、人間が読みやすくAIへの入力にも利用できる形式に整形して表示します。
 
 ```bash
-# 省略形でスレッド取得
+# 省略形でメッセージ取得（単一メッセージ）
 slack-tool get "https://workspace.slack.com/archives/C12345678/p1234567890123456"
 
-# 完全形でスレッド取得
-slack-tool get thread "https://workspace.slack.com/archives/C12345678/p1234567890123456"
+# 完全形でメッセージ取得（単一メッセージ）
+slack-tool get message "https://workspace.slack.com/archives/C12345678/p1234567890123456"
+
+# スレッド全体を取得（返信も含む）
+slack-tool get message "https://workspace.slack.com/archives/C12345678/p1234567890123456" --thread
+
+# スレッドの親メッセージのみを取得
+slack-tool get message "https://workspace.slack.com/archives/C12345678/p1234567890123456" --parent
 
 # ファイルに保存
-slack-tool get "https://workspace.slack.com/archives/C12345678/p1234567890123456" --output thread.md
+slack-tool get message "https://workspace.slack.com/archives/C12345678/p1234567890123456" --output message.md
 
 # Markdown形式で保存
-slack-tool get "https://workspace.slack.com/archives/C12345678/p1234567890123456" --format markdown --output thread.md
+slack-tool get message "https://workspace.slack.com/archives/C12345678/p1234567890123456" --format markdown --output message.md
 ```
+
 
 #### チャンネルの取得（get channel）
 
@@ -47,7 +54,7 @@ slack-tool get "https://workspace.slack.com/archives/C12345678/p1234567890123456
 
 ```bash
 # 省略形でチャンネル取得
-slack-tool get channel "https://workspace.slack.com/archives/C12345678"
+slack-tool channel "https://workspace.slack.com/archives/C12345678"
 
 # 完全形でチャンネル取得
 slack-tool get channel "https://workspace.slack.com/archives/C12345678"
@@ -124,6 +131,11 @@ slack-tool post "返信です！" --thread-url "https://workspace.slack.com/arch
 
 - `--output`, `-o` - 出力ファイル名を指定
 - `--format`, `-f` - 出力形式を指定（text / markdown）
+
+### get message 専用フラグ
+
+- `--thread`, `-t` - スレッド全体を取得する（返信も含む）
+- `--parent`, `-p` - スレッドの親メッセージのみを取得する
 
 ### get channel 専用フラグ
 

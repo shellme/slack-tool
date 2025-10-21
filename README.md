@@ -33,7 +33,7 @@ brew install slack-tool
 slack-tool --version
 
 # 2. Slack APIトークンを設定
-slack-tool config set-token "xoxp-your-token-here"
+slack-tool config set token "xoxp-your-token-here"
 
 # 3. 設定確認
 slack-tool config show
@@ -59,11 +59,14 @@ slack-tool --version
 > 各コマンドには省略形があります。`slack-tool get "url"`のように短縮して使用できます。
 
 ```bash
-# スレッドの内容を取得
+# メッセージの内容を取得（単一メッセージ）
 slack-tool get "https://workspace.slack.com/archives/C12345678/p1234567890123456"
 
+# スレッド全体を取得
+slack-tool get message "https://workspace.slack.com/archives/C12345678/p1234567890123456" --thread
+
 # チャンネルの内容を取得（直近100件）
-slack-tool get channel "https://workspace.slack.com/archives/C12345678"
+slack-tool channel "https://workspace.slack.com/archives/C12345678"
 
 # メッセージを投稿
 slack-tool post "こんにちは！" --channel "C12345678"
@@ -75,11 +78,14 @@ slack-tool reactions "https://workspace.slack.com/archives/C12345678/p1234567890
 ## 省略コマンド（便利な短縮形）
 
 ```bash
-# スレッド取得の短縮形
+# メッセージ取得の短縮形
 slack-tool get "url"
 
 # メッセージ投稿の短縮形
 slack-tool post "メッセージ"
+
+# チャンネル取得の短縮形
+slack-tool channel "url"
 
 # リアクション取得の短縮形
 slack-tool reactions "url"

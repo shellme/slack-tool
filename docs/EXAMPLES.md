@@ -60,7 +60,7 @@
 
 ```bash
 # 2024年1月の投稿を取得
-slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01" --latest "2024-01-31"
+slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01" --latest "2024-01-31"
 
 # 日時形式での指定
 slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01T00:00:00" --latest "2024-01-31T23:59:59"
@@ -69,7 +69,7 @@ slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --o
 slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "1704067200" --latest "1735689599"
 
 # 期間指定とファイル出力を組み合わせ
-slack-tool get channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01" --latest "2024-01-31" --output january.md
+slack-tool channel "https://your-workspace.slack.com/archives/C12345678" --oldest "2024-01-01" --latest "2024-01-31" --output january.md
 ```
 
 ## リアクション取得の出力例
@@ -171,7 +171,7 @@ slack-tool get "url" --output thread.md --format markdown
 ### チャンネル履歴をテキストファイルに保存
 
 ```bash
-slack-tool get channel "url" --output channel.txt --limit 100
+slack-tool channel "url" --output channel.txt --limit 100
 ```
 
 ### リアクション一覧をファイルに保存
