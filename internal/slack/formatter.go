@@ -62,6 +62,36 @@ func (f *Formatter) FormatThread(messages []slack.Message) (string, error) {
 	return result.String(), nil
 }
 
+// FormatMessage formats a single message for output
+func (f *Formatter) FormatMessage(msg slack.Message) (string, error) {
+	// JSTタイムゾーンを設定
+	jst, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		return "", fmt.Errorf("タイムゾーンの設定に失敗しました: %v", err)
+	}
+
+	var result strings.Builder
+
+	// ヘッダーを追加
+	result.WriteString("--- Slackメッセージの内容 (")
+	result.WriteString(time.Now().In(jst).Format("2006/01/02 取得"))
+	result.WriteString(") ---\n\n")
+
+	// メッセージをフォーマット
+	formatted, err := f.formatMessage(msg, jst)
+	if err != nil {
+		return "", fmt.Errorf("メッセージのフォーマットに失敗しました: %v", err)
+	}
+
+	result.WriteString(formatted)
+	result.WriteString("\n\n")
+
+	// フッターを追加
+	result.WriteString("--- ここまで ---")
+
+	return result.String(), nil
+}
+
 // FormatChannel formats channel messages for output
 func (f *Formatter) FormatChannel(messages []slack.Message, channelName string) (string, error) {
 	if len(messages) == 0 {

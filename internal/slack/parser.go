@@ -20,8 +20,9 @@ type ChannelInfo struct {
 
 // ThreadURLInfo contains parsed information from a Slack thread URL
 type ThreadURLInfo struct {
-	ChannelID string
-	Timestamp string
+	ChannelID       string
+	Timestamp       string
+	ThreadTimestamp string // スレッド返信URLの場合は thread_ts パラメータ
 }
 
 // ParseSlackURL parses a Slack thread URL and extracts channel ID and timestamp
@@ -172,22 +173,51 @@ func ParseThreadURL(url string) (*ThreadURLInfo, error) {
 func parseThreadReplyURL(url string) (*ThreadURLInfo, error) {
 	// スレッド返信URLの正規表現パターン
 	// 例: https://your-workspace.slack.com/archives/C12345678/p1234567890123456?thread_ts=1760786585.959009&cid=C12345678
-	pattern := `https://[^/]+\.slack\.com/archives/([A-Z0-9]+)/p\d+.*[?&]thread_ts=([0-9.]+)`
+	pattern := `https://[^/]+\.slack\.com/archives/([A-Z0-9]+)/p(\d+).*[?&]thread_ts=([0-9.]+)`
 	re, err := regexp.Compile(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("正規表現のコンパイルに失敗しました: %v", err)
 	}
 
 	matches := re.FindStringSubmatch(url)
-	if len(matches) != 3 {
+	if len(matches) != 4 {
 		return nil, fmt.Errorf("無効なSlackスレッド返信URLです。正しい形式: https://your-workspace.slack.com/archives/C12345678/p1234567890123456?thread_ts=1760786585.959009&cid=C12345678")
 	}
 
 	channelID := matches[1]
-	threadTimestamp := matches[2]
+	messageTimestampStr := matches[2]
+	threadTimestamp := matches[3]
+
+	// メッセージのタイムスタンプを変換
+	// p1760949917358289 -> 1760949917.358289
+	if len(messageTimestampStr) < 10 {
+		return nil, fmt.Errorf("無効なメッセージタイムスタンプです: %s", messageTimestampStr)
+	}
+
+	// 秒部分とマイクロ秒部分に分割
+	seconds := messageTimestampStr[:10]
+	microseconds := messageTimestampStr[10:]
+
+	// マイクロ秒部分を6桁に調整
+	if len(microseconds) > 6 {
+		microseconds = microseconds[:6]
+	} else {
+		// 6桁にパディング
+		for len(microseconds) < 6 {
+			microseconds += "0"
+		}
+	}
+
+	// 数値として有効かチェック
+	if _, err := strconv.ParseInt(seconds, 10, 64); err != nil {
+		return nil, fmt.Errorf("無効なメッセージタイムスタンプの秒部分です: %s", seconds)
+	}
+
+	messageTimestamp := seconds + "." + microseconds
 
 	return &ThreadURLInfo{
-		ChannelID: channelID,
-		Timestamp: threadTimestamp,
+		ChannelID:       channelID,
+		Timestamp:       messageTimestamp, // 実際のメッセージのタイムスタンプ
+		ThreadTimestamp: threadTimestamp,  // スレッドのタイムスタンプ
 	}, nil
 }

@@ -205,7 +205,7 @@ func (c *Client) PostThreadReplyByURL(text, threadURL string) error {
 
 // GetMessageInfo gets message information by timestamp
 func (c *Client) GetMessageInfo(channelID, timestamp string) (*slack.Message, error) {
-	// メッセージの詳細を取得するために、チャンネル履歴から検索
+	// まず、チャンネル履歴から検索（メインメッセージ用）
 	params := &slack.GetConversationHistoryParameters{
 		ChannelID: channelID,
 		Limit:     1000, // 十分な件数を取得
@@ -222,6 +222,25 @@ func (c *Client) GetMessageInfo(channelID, timestamp string) (*slack.Message, er
 	for _, msg := range messages.Messages {
 		if strings.HasPrefix(msg.Timestamp, searchTimestamp) {
 			return &msg, nil
+		}
+	}
+
+	// チャンネル履歴で見つからない場合、スレッド内のメッセージの可能性がある
+	// すべてのスレッドを検索して該当するメッセージを探す
+	for _, msg := range messages.Messages {
+		// スレッドがあるメッセージの場合、そのスレッド内を検索
+		if msg.ThreadTimestamp != "" && msg.ThreadTimestamp == msg.Timestamp {
+			threadReplies, err := c.GetThreadReplies(channelID, msg.ThreadTimestamp)
+			if err != nil {
+				continue // エラーが発生しても他のスレッドをチェック
+			}
+
+			// スレッド内のメッセージを検索
+			for _, reply := range threadReplies {
+				if strings.HasPrefix(reply.Timestamp, searchTimestamp) {
+					return &reply, nil
+				}
+			}
 		}
 	}
 
