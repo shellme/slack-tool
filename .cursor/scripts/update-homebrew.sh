@@ -132,17 +132,78 @@ update_formula() {
     local tarball_url="https://github.com/shellme/slack-tool/archive/$version.tar.gz"
     
     # sedを使用してURLとSHA256を更新
+    local sed_success=true
+    
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS用
-        sed -i '' "s|url \".*\"|url \"$tarball_url\"|g" "$formula_file"
-        sed -i '' "s|sha256 \".*\"|sha256 \"$sha256\"|g" "$formula_file"
+        # macOS用 - より安全な正規表現パターンを使用
+        if ! sed -i '' "s|url \"[^\"]*\"|url \"$tarball_url\"|g" "$formula_file" 2>/dev/null; then
+            sed_success=false
+        fi
+        if ! sed -i '' "s|sha256 \"[^\"]*\"|sha256 \"$sha256\"|g" "$formula_file" 2>/dev/null; then
+            sed_success=false
+        fi
     else
-        # Linux用
-        sed -i "s|url \".*\"|url \"$tarball_url\"|g" "$formula_file"
-        sed -i "s|sha256 \".*\"|sha256 \"$sha256\"|g" "$formula_file"
+        # Linux用 - より安全な正規表現パターンを使用
+        if ! sed -i "s|url \"[^\"]*\"|url \"$tarball_url\"|g" "$formula_file" 2>/dev/null; then
+            sed_success=false
+        fi
+        if ! sed -i "s|sha256 \"[^\"]*\"|sha256 \"$sha256\"|g" "$formula_file" 2>/dev/null; then
+            sed_success=false
+        fi
     fi
     
-    log_success "Formulaファイル更新完了"
+    # sedが失敗した場合のフォールバック処理
+    if [[ "$sed_success" == "false" ]]; then
+        log_warning "sedコマンドでエラーが発生しました。Pythonを使用したフォールバック処理を実行します"
+        
+        # Pythonを使用した更新処理
+        python3 -c "
+import re
+import sys
+
+formula_file = '$formula_file'
+tarball_url = '$tarball_url'
+sha256 = '$sha256'
+
+try:
+    with open(formula_file, 'r') as f:
+        content = f.read()
+    
+    # URLを更新
+    content = re.sub(r'url \"[^\"]*\"', f'url \"{tarball_url}\"', content)
+    
+    # SHA256を更新
+    content = re.sub(r'sha256 \"[^\"]*\"', f'sha256 \"{sha256}\"', content)
+    
+    with open(formula_file, 'w') as f:
+        f.write(content)
+    
+    print('Pythonによる更新が完了しました')
+except Exception as e:
+    print(f'Python更新も失敗しました: {e}')
+    sys.exit(1)
+" 2>/dev/null || {
+            log_error "Pythonによる更新も失敗しました。手動更新が必要です"
+            log_info "手動でSHA256を計算してください:"
+            echo "  curl -L $tarball_url | shasum -a 256"
+            log_info "Formulaファイルを手動で編集してください:"
+            echo "  vim $formula_file"
+            log_info "以下の内容に更新してください:"
+            echo "  url \"$tarball_url\""
+            echo "  sha256 \"$sha256\""
+            exit 1
+        }
+    fi
+    
+    # 更新結果の検証
+    if grep -q "url \"$tarball_url\"" "$formula_file" && grep -q "sha256 \"$sha256\"" "$formula_file"; then
+        log_success "Formulaファイル更新完了"
+    else
+        log_error "Formulaファイルの更新に失敗しました"
+        log_info "現在の内容を確認してください:"
+        grep -E "(url|sha256)" "$formula_file"
+        exit 1
+    fi
     
     # 変更内容を表示
     log_info "更新内容:"
