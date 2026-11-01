@@ -280,14 +280,14 @@ func (c *Client) GetReactions(messageURL string) ([]ReactionInfo, error) {
 		Timestamp: threadInfo.Timestamp,
 	}
 
-	reactions, err := c.api.GetReactions(itemRef, slack.GetReactionsParameters{})
+	item, err := c.api.GetReactions(itemRef, slack.GetReactionsParameters{})
 	if err != nil {
 		return nil, c.handleAPIError(err)
 	}
 
 	// リアクション情報を変換
 	var reactionInfos []ReactionInfo
-	for _, reaction := range reactions {
+	for _, reaction := range item.Reactions {
 		// ユーザー情報を取得
 		var users []UserInfo
 		for _, userID := range reaction.Users {
