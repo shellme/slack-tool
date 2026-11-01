@@ -104,7 +104,12 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 			}
 		} else if parentOnly {
 			// スレッドの親メッセージのみを取得
-			message, getErr := client.GetMessageInfo(threadInfo.ChannelID, threadInfo.Timestamp)
+			// スレッド返信URLの場合は ThreadTimestamp が親メッセージ
+			parentTimestamp := threadInfo.Timestamp
+			if threadInfo.ThreadTimestamp != "" {
+				parentTimestamp = threadInfo.ThreadTimestamp
+			}
+			message, getErr := client.GetMessageInfo(threadInfo.ChannelID, parentTimestamp, "")
 			if getErr != nil {
 				fmt.Fprintf(os.Stderr, "エラー: メッセージの取得に失敗しました: %v\n", getErr)
 				os.Exit(1)
@@ -112,7 +117,7 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 			messages = []slackgo.Message{*message}
 		} else {
 			// 単一メッセージを取得（デフォルト）
-			message, getErr := client.GetMessageInfo(threadInfo.ChannelID, threadInfo.Timestamp)
+			message, getErr := client.GetMessageInfo(threadInfo.ChannelID, threadInfo.Timestamp, threadInfo.ThreadTimestamp)
 			if getErr != nil {
 				fmt.Fprintf(os.Stderr, "エラー: メッセージの取得に失敗しました: %v\n", getErr)
 				os.Exit(1)

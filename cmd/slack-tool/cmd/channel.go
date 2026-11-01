@@ -78,13 +78,6 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 		oldest, _ := cmd.Flags().GetString("oldest")
 		latest, _ := cmd.Flags().GetString("latest")
 
-		// 1000件を超える場合の警告表示
-		if limit > 1000 {
-			fmt.Fprintf(os.Stderr, "警告: 指定された取得件数（%d件）はSlack APIの制限（1,000件）を超えています。\n", limit)
-			fmt.Fprintf(os.Stderr, "実際には1,000件までしか取得されません。\n")
-			fmt.Fprintf(os.Stderr, "大量のデータを取得する場合は期間指定（--oldest/--latest）を使用して複数回に分けて取得することをお勧めします。\n\n")
-		}
-
 		// チャンネルの内容を取得（スレッド返信も含む）
 		messages, err := client.GetChannelHistoryWithThreadsInRange(channelInfo.ChannelID, limit, oldest, latest)
 		if err != nil {
@@ -93,13 +86,7 @@ AIへの入力に適した人間が読みやすいプレーンテキスト形式
 		}
 
 		// 取得件数の情報表示
-		actualCount := len(messages)
-		fmt.Fprintf(os.Stderr, "情報: %d件のメッセージを取得しました。\n", actualCount)
-
-		if actualCount >= 1000 {
-			fmt.Fprintf(os.Stderr, "情報: 1,000件の制限に達しました。古いメッセージが取得されていない可能性があります。\n")
-			fmt.Fprintf(os.Stderr, "全期間のデータが必要な場合は期間指定（--oldest/--latest）を使用して複数回に分けて取得してください。\n\n")
-		}
+		fmt.Fprintf(os.Stderr, "情報: スレッド返信を含め%d件のメッセージを取得しました。\n", len(messages))
 
 		// チャンネル情報を取得
 		channel, err := client.GetChannelInfo(channelInfo.ChannelID)

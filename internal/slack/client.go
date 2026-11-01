@@ -1,13 +1,35 @@
 package slack
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/slack-go/slack"
 )
+
+// historyPageSize is the page size for conversations.history (Slack recommends 200 or fewer)
+const historyPageSize = 200
+
+// maxRateLimitRetries is the number of retries after a rate limit error
+const maxRateLimitRetries = 5
+
+// retry calls fn, waiting and retrying when Slack returns a rate limit error
+func retry[T any](fn func() (T, error)) (T, error) {
+	for attempt := 0; ; attempt++ {
+		result, err := fn()
+
+		var rateLimited *slack.RateLimitedError
+		if !errors.As(err, &rateLimited) || attempt >= maxRateLimitRetries {
+			return result, err
+		}
+
+		fmt.Fprintf(os.Stderr, "情報: APIレート制限のため %s 待機します\n", rateLimited.RetryAfter)
+		time.Sleep(rateLimited.RetryAfter)
+	}
+}
 
 // Client wraps the Slack API client
 type Client struct {
@@ -22,24 +44,43 @@ func NewClient(token string) *Client {
 
 // GetThreadReplies fetches all replies in a thread
 func (c *Client) GetThreadReplies(channelID, timestamp string) ([]slack.Message, error) {
-	// conversations.replies APIを呼び出し
-	params := &slack.GetConversationRepliesParameters{
-		ChannelID: channelID,
-		Timestamp: timestamp,
-		Inclusive: true, // 指定されたタイムスタンプのメッセージも含める
-	}
+	var messages []slack.Message
+	cursor := ""
 
-	messages, _, _, err := c.api.GetConversationReplies(params)
-	if err != nil {
-		return nil, c.handleAPIError(err)
-	}
+	for {
+		// conversations.replies APIを呼び出し
+		params := &slack.GetConversationRepliesParameters{
+			ChannelID: channelID,
+			Timestamp: timestamp,
+			Cursor:    cursor,
+			Inclusive: true, // 指定されたタイムスタンプのメッセージも含める
+		}
 
-	return messages, nil
+		var hasMore bool
+		var nextCursor string
+		page, err := retry(func() ([]slack.Message, error) {
+			var msgs []slack.Message
+			var err error
+			msgs, hasMore, nextCursor, err = c.api.GetConversationReplies(params)
+			return msgs, err
+		})
+		if err != nil {
+			return nil, c.handleAPIError(err)
+		}
+
+		messages = append(messages, page...)
+		if !hasMore || nextCursor == "" {
+			return messages, nil
+		}
+		cursor = nextCursor
+	}
 }
 
 // GetUserInfo fetches user information by user ID
 func (c *Client) GetUserInfo(userID string) (*slack.User, error) {
-	user, err := c.api.GetUserInfo(userID)
+	user, err := retry(func() (*slack.User, error) {
+		return c.api.GetUserInfo(userID)
+	})
 	if err != nil {
 		return nil, c.handleAPIError(err)
 	}
@@ -49,7 +90,9 @@ func (c *Client) GetUserInfo(userID string) (*slack.User, error) {
 
 // GetUserGroups fetches all user groups (subteams) information
 func (c *Client) GetUserGroups() ([]slack.UserGroup, error) {
-	usergroups, err := c.api.GetUserGroups()
+	usergroups, err := retry(func() ([]slack.UserGroup, error) {
+		return c.api.GetUserGroups()
+	})
 	if err != nil {
 		return nil, c.handleAPIError(err)
 	}
@@ -59,17 +102,7 @@ func (c *Client) GetUserGroups() ([]slack.UserGroup, error) {
 
 // GetChannelHistory fetches channel history
 func (c *Client) GetChannelHistory(channelID string, limit int) ([]slack.Message, error) {
-	params := &slack.GetConversationHistoryParameters{
-		ChannelID: channelID,
-		Limit:     limit,
-	}
-
-	messages, err := c.api.GetConversationHistory(params)
-	if err != nil {
-		return nil, c.handleAPIError(err)
-	}
-
-	return messages.Messages, nil
+	return c.fetchHistory(channelID, limit, "", "")
 }
 
 // GetChannelHistoryWithThreads fetches channel history including thread replies
@@ -79,56 +112,52 @@ func (c *Client) GetChannelHistoryWithThreads(channelID string, limit int) ([]sl
 
 // GetChannelHistoryWithThreadsInRange fetches channel history including thread replies with date range
 func (c *Client) GetChannelHistoryWithThreadsInRange(channelID string, limit int, oldest, latest string) ([]slack.Message, error) {
-	params := &slack.GetConversationHistoryParameters{
-		ChannelID: channelID,
-		Limit:     limit,
-	}
-
 	// 期間指定がある場合は設定
+	var oldestTS, latestTS string
+	var err error
 	if oldest != "" {
-		oldestTS, err := c.parseTimestamp(oldest)
+		oldestTS, err = c.parseTimestamp(oldest)
 		if err != nil {
 			return nil, fmt.Errorf("oldest の日時解析に失敗しました: %v", err)
 		}
-		params.Oldest = oldestTS
 	}
 	if latest != "" {
-		latestTS, err := c.parseTimestamp(latest)
+		latestTS, err = c.parseTimestamp(latest)
 		if err != nil {
 			return nil, fmt.Errorf("latest の日時解析に失敗しました: %v", err)
 		}
-		params.Latest = latestTS
 	}
 
-	messages, err := c.api.GetConversationHistory(params)
+	messages, err := c.fetchHistory(channelID, limit, oldestTS, latestTS)
 	if err != nil {
-		return nil, c.handleAPIError(err)
+		return nil, err
 	}
 
 	// スレッドの返信も取得
+	// チャンネルにも投稿された返信は履歴と重複するため除外する
 	var allMessages []slack.Message
-	threadCount := 0
+	seen := make(map[string]bool)
+	add := func(msg slack.Message) {
+		if !seen[msg.Timestamp] {
+			seen[msg.Timestamp] = true
+			allMessages = append(allMessages, msg)
+		}
+	}
 
-	for _, msg := range messages.Messages {
-		allMessages = append(allMessages, msg)
+	for _, msg := range messages {
+		add(msg)
 
-		// スレッドの返信があるかチェック
-		// ThreadTimestampが空でない場合、そのメッセージはスレッドに関連している
-		if msg.ThreadTimestamp != "" {
-			threadCount++
-
-			// スレッドの返信を取得（ThreadTimestampを使用）
+		// 親メッセージの場合のみスレッドの返信を取得
+		if msg.ThreadTimestamp != "" && msg.ThreadTimestamp == msg.Timestamp {
 			threadReplies, err := c.GetThreadReplies(channelID, msg.ThreadTimestamp)
 			if err != nil {
 				// エラーが発生してもメインメッセージは含める
+				fmt.Fprintf(os.Stderr, "警告: スレッド %s の返信を取得できませんでした: %v\n", msg.ThreadTimestamp, err)
 				continue
 			}
 
-			// スレッドの返信を追加（メインメッセージは除外）
 			for _, reply := range threadReplies {
-				if reply.Timestamp != msg.Timestamp {
-					allMessages = append(allMessages, reply)
-				}
+				add(reply)
 			}
 		}
 	}
@@ -136,10 +165,46 @@ func (c *Client) GetChannelHistoryWithThreadsInRange(channelID string, limit int
 	return allMessages, nil
 }
 
+// fetchHistory fetches up to limit messages, following pagination
+func (c *Client) fetchHistory(channelID string, limit int, oldest, latest string) ([]slack.Message, error) {
+	var messages []slack.Message
+	cursor := ""
+
+	for {
+		pageSize := historyPageSize
+		if limit-len(messages) < pageSize {
+			pageSize = limit - len(messages)
+		}
+
+		params := &slack.GetConversationHistoryParameters{
+			ChannelID: channelID,
+			Cursor:    cursor,
+			Limit:     pageSize,
+			Oldest:    oldest,
+			Latest:    latest,
+		}
+
+		response, err := retry(func() (*slack.GetConversationHistoryResponse, error) {
+			return c.api.GetConversationHistory(params)
+		})
+		if err != nil {
+			return nil, c.handleAPIError(err)
+		}
+
+		messages = append(messages, response.Messages...)
+		cursor = response.ResponseMetaData.NextCursor
+		if !response.HasMore || cursor == "" || len(messages) >= limit {
+			return messages, nil
+		}
+	}
+}
+
 // GetChannelInfo fetches channel information
 func (c *Client) GetChannelInfo(channelID string) (*slack.Channel, error) {
-	channel, err := c.api.GetConversationInfo(&slack.GetConversationInfoInput{
-		ChannelID: channelID,
+	channel, err := retry(func() (*slack.Channel, error) {
+		return c.api.GetConversationInfo(&slack.GetConversationInfoInput{
+			ChannelID: channelID,
+		})
 	})
 	if err != nil {
 		return nil, c.handleAPIError(err)
@@ -150,11 +215,7 @@ func (c *Client) GetChannelInfo(channelID string) (*slack.Channel, error) {
 
 // PostMessage posts a message to a Slack channel
 func (c *Client) PostMessage(channelID, text string) error {
-	_, _, err := c.api.PostMessage(channelID, slack.MsgOptionText(text, false))
-	if err != nil {
-		return c.handleAPIError(err)
-	}
-	return nil
+	return c.PostMessageWithOptions(channelID, text)
 }
 
 // PostMessageWithOptions posts a message with additional options
@@ -164,7 +225,11 @@ func (c *Client) PostMessageWithOptions(channelID, text string, options ...slack
 	}
 	msgOptions = append(msgOptions, options...)
 
-	_, _, err := c.api.PostMessage(channelID, msgOptions...)
+	// レート制限時は投稿されないため再試行しても重複しない
+	_, err := retry(func() (string, error) {
+		_, ts, err := c.api.PostMessage(channelID, msgOptions...)
+		return ts, err
+	})
 	if err != nil {
 		return c.handleAPIError(err)
 	}
@@ -174,15 +239,10 @@ func (c *Client) PostMessageWithOptions(channelID, text string, options ...slack
 // PostThreadReply posts a reply to a thread
 func (c *Client) PostThreadReply(channelID, text, threadTimestamp string) error {
 	// Slack API ドキュメントに基づく正しい実装
-	_, _, err := c.api.PostMessage(channelID,
-		slack.MsgOptionText(text, false),
+	return c.PostMessageWithOptions(channelID, text,
 		slack.MsgOptionPostMessageParameters(slack.PostMessageParameters{
 			ThreadTimestamp: threadTimestamp,
 		}))
-	if err != nil {
-		return c.handleAPIError(err)
-	}
-	return nil
 }
 
 // PostThreadReplyByURL posts a reply to a thread using a thread URL
@@ -194,53 +254,57 @@ func (c *Client) PostThreadReplyByURL(text, threadURL string) error {
 	}
 
 	// メッセージ情報を取得して正確なタイムスタンプを確認
-	msg, err := c.GetMessageInfo(threadInfo.ChannelID, threadInfo.Timestamp)
+	msg, err := c.GetMessageInfo(threadInfo.ChannelID, threadInfo.Timestamp, threadInfo.ThreadTimestamp)
 	if err != nil {
 		return fmt.Errorf("メッセージ情報の取得に失敗しました: %v", err)
 	}
 
-	// 正確なタイムスタンプでスレッド返信
-	return c.PostThreadReply(threadInfo.ChannelID, text, msg.Timestamp)
+	// 返信のURLが指定された場合は親スレッドに返信する
+	threadTimestamp := msg.Timestamp
+	if msg.ThreadTimestamp != "" {
+		threadTimestamp = msg.ThreadTimestamp
+	}
+
+	return c.PostThreadReply(threadInfo.ChannelID, text, threadTimestamp)
 }
 
-// GetMessageInfo gets message information by timestamp
-func (c *Client) GetMessageInfo(channelID, timestamp string) (*slack.Message, error) {
-	// まず、チャンネル履歴から検索（メインメッセージ用）
-	params := &slack.GetConversationHistoryParameters{
-		ChannelID: channelID,
-		Limit:     1000, // 十分な件数を取得
-	}
-
-	messages, err := c.api.GetConversationHistory(params)
-	if err != nil {
-		return nil, c.handleAPIError(err)
-	}
-
-	// 指定されたタイムスタンプのメッセージを検索
-	// URLから取得したタイムスタンプの .000000 部分を削除して比較
-	searchTimestamp := strings.TrimSuffix(timestamp, ".000000")
-	for _, msg := range messages.Messages {
-		if strings.HasPrefix(msg.Timestamp, searchTimestamp) {
-			return &msg, nil
+// GetMessageInfo gets a message by timestamp. threadTimestamp is required to find a thread reply
+func (c *Client) GetMessageInfo(channelID, timestamp, threadTimestamp string) (*slack.Message, error) {
+	// スレッド返信でなければタイムスタンプを指定して直接取得
+	if threadTimestamp == "" || threadTimestamp == timestamp {
+		params := &slack.GetConversationHistoryParameters{
+			ChannelID: channelID,
+			Oldest:    timestamp,
+			Latest:    timestamp,
+			Inclusive: true,
+			Limit:     1,
 		}
+
+		response, err := retry(func() (*slack.GetConversationHistoryResponse, error) {
+			return c.api.GetConversationHistory(params)
+		})
+		if err != nil {
+			return nil, c.handleAPIError(err)
+		}
+
+		for _, msg := range response.Messages {
+			if msg.Timestamp == timestamp {
+				return &msg, nil
+			}
+		}
+
+		return nil, fmt.Errorf("指定されたタイムスタンプのメッセージが見つかりませんでした: %s（スレッド返信の場合は thread_ts 付きのURLを指定してください）", timestamp)
 	}
 
-	// チャンネル履歴で見つからない場合、スレッド内のメッセージの可能性がある
-	// すべてのスレッドを検索して該当するメッセージを探す
-	for _, msg := range messages.Messages {
-		// スレッドがあるメッセージの場合、そのスレッド内を検索
-		if msg.ThreadTimestamp != "" && msg.ThreadTimestamp == msg.Timestamp {
-			threadReplies, err := c.GetThreadReplies(channelID, msg.ThreadTimestamp)
-			if err != nil {
-				continue // エラーが発生しても他のスレッドをチェック
-			}
+	// スレッド内のメッセージを検索
+	replies, err := c.GetThreadReplies(channelID, threadTimestamp)
+	if err != nil {
+		return nil, err
+	}
 
-			// スレッド内のメッセージを検索
-			for _, reply := range threadReplies {
-				if strings.HasPrefix(reply.Timestamp, searchTimestamp) {
-					return &reply, nil
-				}
-			}
+	for _, reply := range replies {
+		if reply.Timestamp == timestamp {
+			return &reply, nil
 		}
 	}
 
@@ -269,7 +333,7 @@ func (c *Client) GetReactions(messageURL string) ([]ReactionInfo, error) {
 	}
 
 	// メッセージ情報を取得
-	_, err = c.GetMessageInfo(threadInfo.ChannelID, threadInfo.Timestamp)
+	_, err = c.GetMessageInfo(threadInfo.ChannelID, threadInfo.Timestamp, threadInfo.ThreadTimestamp)
 	if err != nil {
 		return nil, fmt.Errorf("メッセージ情報の取得に失敗しました: %v", err)
 	}
@@ -280,7 +344,9 @@ func (c *Client) GetReactions(messageURL string) ([]ReactionInfo, error) {
 		Timestamp: threadInfo.Timestamp,
 	}
 
-	item, err := c.api.GetReactions(itemRef, slack.GetReactionsParameters{})
+	item, err := retry(func() (slack.ReactedItem, error) {
+		return c.api.GetReactions(itemRef, slack.GetReactionsParameters{})
+	})
 	if err != nil {
 		return nil, c.handleAPIError(err)
 	}
@@ -293,7 +359,9 @@ func (c *Client) GetReactions(messageURL string) ([]ReactionInfo, error) {
 		for _, userID := range reaction.Users {
 			user, err := c.GetUserInfo(userID)
 			if err != nil {
-				// ユーザー情報が取得できない場合はスキップ
+				// ユーザー情報が取得できない場合もリアクションした事実は残す
+				fmt.Fprintf(os.Stderr, "警告: ユーザー %s の情報を取得できませんでした: %v\n", userID, err)
+				users = append(users, UserInfo{ID: userID})
 				continue
 			}
 			users = append(users, UserInfo{
@@ -316,6 +384,11 @@ func (c *Client) GetReactions(messageURL string) ([]ReactionInfo, error) {
 func (c *Client) handleAPIError(err error) error {
 	if err == nil {
 		return nil
+	}
+
+	var rateLimited *slack.RateLimitedError
+	if errors.As(err, &rateLimited) {
+		return fmt.Errorf("APIレート制限に達しました。しばらく待ってから再試行してください")
 	}
 
 	// エラーメッセージをチェックして適切な日本語メッセージに変換
@@ -384,7 +457,8 @@ func (c *Client) parseTimestamp(dateStr string) (string, error) {
 	}
 
 	for _, format := range formats {
-		if t, err := time.Parse(format, dateStr); err == nil {
+		// タイムゾーン指定がない場合はローカル時刻として扱う
+		if t, err := time.ParseInLocation(format, dateStr, time.Local); err == nil {
 			// Unixタイムスタンプに変換（秒単位）
 			return fmt.Sprintf("%.0f", float64(t.Unix())), nil
 		}
